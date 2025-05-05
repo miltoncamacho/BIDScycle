@@ -3,11 +3,11 @@ requires = ["flit_core >=2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name =  "py-project-toml"
+name =  "BIDScycle"
 authors = [
-    {name = "Daniel Ciborowski", email = "dciborow@microsoft.com"},
+    {name = "Milton Camacho", email = "miltoncamachoicc@gmail.com"},{name = "", email = ""},
 ]
-description = "Sample Python Project for creating a new Python Module"
+description = "Easy BIDS compliant renaming of BIDS duplicates"
 readme = "README.md"
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -19,8 +19,14 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11"
 ]
-requires-python = ">=3.8.1"
+requires-python = ">=3.11.1"
 dynamic = ["version"]
+
+dependencies = [
+    "bids",
+    "coloredlogs",
+    "pandas"
+]
 
 [project.optional-dependencies]
 spark = [
@@ -46,10 +52,13 @@ test = [
     "shellcheck-py==0.9.0.2"
 ]
 
+[project.scripts]
+bidscycle = "bidscycle.cli.run:main"
+
 [project.urls]
-Documentation = "https://github.com/microsoft/python-package-template/tree/main#readme"
-Source = "https://github.com/microsoft/python-package-template"
-Tracker = "https://github.com/microsoft/python-package-template/issues"
+Documentation = "https://github.com/miltoncamacho/bidscycle/tree/main#readme"
+Source = "https://github.com/miltoncamacho/bidscycle"
+Tracker = "https://github.com/miltoncamacho/bidscycle/issues"
 
 [tool.flit.module]
 name = "python_package"
