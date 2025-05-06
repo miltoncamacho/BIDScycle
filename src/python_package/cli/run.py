@@ -10,7 +10,7 @@ import coloredlogs
 import sys
 import importlib.util
 from ..switch_duplicate import switch_duplicate
-from ..use_duplicate import use_duplicate
+from ..create_duplicates import create_duplicates
 from ..clean_duplicates import clean_duplicates
 from concurrent.futures import ThreadPoolExecutor  # for background thread
 
@@ -60,8 +60,8 @@ def main() -> None:
 
         )
 
-    if (args.command == "use_duplicate"):
-        use_duplicate(
+    if (args.command == "create_duplicates"):
+        create_duplicates(
             subject=args.subject,
             session=args.session,
             acquisition=args.acquisition,
@@ -73,7 +73,6 @@ def main() -> None:
         )
 
     if (args.command == "clean_duplicates"):
-
         clean_duplicates(
             subject=args.subject,
             session=args.session,
