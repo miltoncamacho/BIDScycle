@@ -25,7 +25,8 @@ dynamic = ["version"]
 dependencies = [
     "pybids",
     "coloredlogs",
-    "pandas"
+    "pandas",
+    "datalad",
 ]
 
 [project.optional-dependencies]
