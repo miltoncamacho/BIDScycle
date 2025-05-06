@@ -60,6 +60,24 @@ def _next_free_number(seen: set[int]) -> int:
         n += 1
     return n
 
+def _dup_path(src: Path, num: int) -> Path:
+    """
+    Return <stem>__dup-XX<all_suffixes>, where <all_suffixes> could be
+    ".nii.gz", ".json", ".tsv.gz", …
+    """
+    full_ext = "".join(src.suffixes)          # ".nii.gz"
+    stem = src.name[: -len(full_ext)]         # strip that whole tail
+    new_name = f"{stem}__dup-{num:02d}{full_ext}"
+    return src.with_name(new_name)
+
+def _full_ext(p: Path) -> str:
+    """Return the complete extension chain ('.nii.gz', '.tar.bz2', …)."""
+    return "".join(p.suffixes)
+
+def _is_nifti(p: Path) -> bool:
+    """True for .nii or .nii.gz (compressed)."""
+    return _full_ext(p).startswith(".nii")
+
 
 # --------------------------------------------------------------------------- #
 # main worker                                                                 #
@@ -108,22 +126,16 @@ def create_duplicates(
     # ------------------ build rename plan ---------------------------------- #
     for f in matches:
         src_nifti = Path(f.path)
-        session_dir = src_nifti.parents[2]             # …/sub-XX/ses-YY
-        used_nums = counters[session_dir]
-        num = _next_free_number(used_nums)
-        used_nums.add(num)
+        session_dir = src_nifti.parents[2]
+        num = _next_free_number(counters[session_dir])
+        counters[session_dir].add(num)
 
-        dst_nifti = src_nifti.with_name(
-            f"{src_nifti.stem}__dup-{num:02d}{src_nifti.suffix}"
-        )
+        dst_nifti = _dup_path(src_nifti, num)
         rename_pairs.append((src_nifti, dst_nifti))
 
-        # side‑car JSON?
         json_path = src_nifti.with_suffix(".json")
         if json_path.exists():
-            dst_json = json_path.with_name(
-                f"{json_path.stem}__dup-{num:02d}{json_path.suffix}"
-            )
+            dst_json = _dup_path(json_path, num)
             rename_pairs.append((json_path, dst_json))
 
     # ------------------ execute renames ------------------------------------ #
@@ -143,14 +155,18 @@ def create_duplicates(
 
     # ------------------ patch scans.tsv ------------------------------------ #
     tsv_updates: Dict[Path, Dict[str, str]] = defaultdict(dict)
+
     for old, new in rename_pairs:
-        if old.suffix.startswith(".nii"):  # only NIfTI rows are present in scans.tsv
-            session_dir = old.parents[2]
-            rel_old = old.relative_to(session_dir).as_posix()
-            rel_new = new.relative_to(session_dir).as_posix()
-            tsv_path = next(session_dir.glob("*_scans.tsv"), None)
-            if tsv_path:
-                tsv_updates[tsv_path][rel_old] = rel_new
+        lgr.info(old)
+        if not _is_nifti(old):
+            continue                                     # skip JSON etc.
+
+        session_dir = old.parents[1]                     # …/sub-XX/ses-YY
+        rel_old = old.relative_to(session_dir).as_posix()
+        rel_new = new.relative_to(session_dir).as_posix()
+        tsv_path = next(session_dir.glob("*_scans.tsv"), None)
+        if tsv_path:
+            tsv_updates[tsv_path][rel_old] = rel_new
 
     for tsv_path, repl in tsv_updates.items():
         if dry_run:
