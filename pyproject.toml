@@ -23,7 +23,7 @@ requires-python = ">=3.11.1"
 dynamic = ["version"]
 
 dependencies = [
-    "bids",
+    "pybids",
     "coloredlogs",
     "pandas"
 ]
