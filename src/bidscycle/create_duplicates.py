@@ -78,6 +78,13 @@ def _is_nifti(p: Path) -> bool:
     """True for .nii or .nii.gz (compressed)."""
     return _full_ext(p).startswith(".nii")
 
+def _json_sidecar(src: Path) -> Path:
+    """
+    Return the side‑car JSON path for a NIfTI file, handling both
+    '.nii' and '.nii.gz'.
+    """
+    stem = src.name[: -len("".join(src.suffixes))]  # remove full ext
+    return src.with_name(f"{stem}.json")
 
 # --------------------------------------------------------------------------- #
 # main worker                                                                 #
@@ -127,17 +134,16 @@ def create_duplicates(
     for f in matches:
         src_nifti = Path(f.path)
         session_dir = src_nifti.parents[2]
+
         num = _next_free_number(counters[session_dir])
         counters[session_dir].add(num)
 
         dst_nifti = _dup_path(src_nifti, num)
         rename_pairs.append((src_nifti, dst_nifti))
 
-        json_path = src_nifti.with_suffix(".json")
+        json_path = _json_sidecar(src_nifti)
         if json_path.exists():
-            dst_json = _dup_path(json_path, num)
-            rename_pairs.append((json_path, dst_json))
-
+            rename_pairs.append((json_path, _dup_path(json_path, num)))
     # ------------------ execute renames ------------------------------------ #
     new_files: List[Path] = []
     for old, new in rename_pairs:
@@ -157,7 +163,6 @@ def create_duplicates(
     tsv_updates: Dict[Path, Dict[str, str]] = defaultdict(dict)
 
     for old, new in rename_pairs:
-        lgr.info(old)
         if not _is_nifti(old):
             continue                                     # skip JSON etc.
 
