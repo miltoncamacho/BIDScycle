@@ -68,23 +68,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Duplicate files that match entity filters",
     )
     dup.add_argument("dataset", type=Path, help="Root of the BIDS dataset")
-    dup.add_argument(
-        "-f",
-        "--filter",
-        action="append",
-        default=[],
-        metavar="entity=value[,value2]",
-        help="Repeatable BIDS entity filter (e.g. -f task=rest)",
-    )
-    dup.add_argument(
-        "--duplicates",
-        "-d",
-        type=_csv,
-        required=True,
-        metavar="N[,N2]",
-        help="Duplicate number(s) to append (comma‑separated)",
-    )
-    dup.add_argument("--suffix", default="_dup", help="Suffix after duplicate number")
+    dup.add_argument("-f", "--filter", action="append", required=True, metavar="entity=value[,value2]", help="Repeatable BIDS entity filter (e.g. -f subject=01 -f session=01 -f run=1,3 -f task=rest)")
     dup.add_argument("--commit-msg", "-c", help="If given, DataLad will save the new files")
     dup.add_argument("--dry-run", action="store_true", help="Show what would change")
     dup.add_argument("--no-datalad", action="store_true", help="Skip DataLad save step")
