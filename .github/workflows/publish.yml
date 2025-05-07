@@ -1,10 +1,33 @@
-name: Python Publish Workflow
+name: Publish Python Package
+
 on:
-  workflow_call:
+  push:
+    tags:
+      - "v*"  # Only run on version tags like v1.2.3
 
 jobs:
-  publish:
-    uses: microsoft/action-python/.github/workflows/publish.yml@0.6.4
-    secrets:
-      PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      TEST_PYPI_PASSWORD: ${{ secrets.TEST_PYPI_PASSWORD  }}
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: twine upload dist/*
