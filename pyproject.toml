@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name =  "BIDScycle"
 authors = [
-    {name = "Milton Camacho", email = "miltoncamachoicc@gmail.com"},{name = "", email = ""},
+    {name = "Milton Camacho", email = "miltoncamachoicc@gmail.com"},{name = "Shireen Parimoo", email = "sparimoo95@gmail.com"},
 ]
 description = "Easy BIDS compliant renaming of BIDS duplicates"
 readme = "README.md"
