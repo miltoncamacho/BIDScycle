@@ -208,5 +208,12 @@ def create_duplicates(
         lgr.info("Saving changes to DataLad with message: %s", commit_msg)
         dl.Dataset(str(dataset)).save(message=commit_msg)
 
-    lgr.info("Finished: %d file(s) renamed (plus side‑cars)", len(rename_pairs))
+    # ------------------ summary -------------------------------------------- #
+    if dry_run:
+        lgr.info("Would rename %d file(s) (plus side‑cars)", len(rename_pairs))
+        lgr.info("Would patch %d scans.tsv files", len(tsv_updates))
+    else:
+        lgr.info("Renamed %d file(s) (plus side‑cars)", len(rename_pairs))
+        lgr.info("Patched %d scans.tsv files", len(tsv_updates))
+
     return new_files
