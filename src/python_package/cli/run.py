@@ -12,6 +12,7 @@ import importlib.util
 from ..switch_duplicate import switch_duplicate
 from ..use_duplicate import use_duplicate
 from ..clean_duplicates import clean_duplicates
+from ..remove_duplicates import remove_duplicates
 from concurrent.futures import ThreadPoolExecutor  # for background thread
 
 lgr = logging.getLogger(__name__)
@@ -47,6 +48,20 @@ def main() -> None:
     DEBUG = args.verbose or DEBUG
     level = logging.DEBUG if DEBUG else logging.INFO
     coloredlogs.install(level=level)
+
+    if (args.command == "remove_duplicates"):
+        remove_duplicates(subject=args.subject,
+                          session=args.session,
+                          acquisition=args.acquisition,
+                          run=args.run,
+                          label=args.label,
+                          duplicates=args.dublicates,
+                          dry_run=args.dry_run,
+                          commit_msg=args.commit_msg,
+                          keep_pattern=args.keep_pattern,
+                          nodatalad=args.nodatalad,
+                          verbose=args.verbose
+        )
 
     if (args.command == "switch_duplicate"):
         switch_duplicate(subject=args.subject,
