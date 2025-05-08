@@ -29,7 +29,7 @@ import coloredlogs
 #  library functions
 from bidscycle.create_duplicates import create_duplicates
 from bidscycle.switch_duplicate import switch_duplicate
-from bidscycle.clean_duplicates import clean_duplicates
+# from bidscycle.clean_duplicates import clean_duplicates
 
 
 # --------------------------------------------------------------------------- #
@@ -82,7 +82,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sw.add_argument("dataset", type=Path, help="Root of the BIDS dataset")
     sw.add_argument("-f", "--filter", action="append", required=True, metavar="entity=value[,value2]", help="Repeatable BIDS entity filter (e.g. -f subject=01 -f session=01 -f run=1,3 -f task=rest)")
-    sw.add_argument("--duplicate", "-d", required=True)
     sw.add_argument("--commit-msg", "-c", help="If given, DataLad will save the new files")
     sw.add_argument("--dry-run", action="store_true", help="Show what would change but do not change anything")
     sw.add_argument("--no-datalad", action="store_true")
@@ -124,12 +123,9 @@ def _cmd_switch_duplicate(args: argparse.Namespace) -> None:
     _install_logging(args.verbose)
     switch_duplicate(
         dataset=args.dataset,
-        subject=args.subject,
-        session=args.session,
-        acquisition=args.acquisition,
-        run=args.run,
-        label=args.label,
-        duplicate=args.duplicate,
+        filters=args.filter,
+        commit_msg=args.commit_msg,
+        dry_run=args.dry_run,
         use_datalad=not args.no_datalad,
     )
 
