@@ -68,25 +68,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="Duplicate files that match entity filters",
     )
     dup.add_argument("dataset", type=Path, help="Root of the BIDS dataset")
-    dup.add_argument(
-        "-f",
-        "--filter",
-        action="append",
-        default=[],
-        metavar="entity=value[,value2]",
-        help="Repeatable BIDS entity filter (e.g. -f task=rest)",
-    )
-    dup.add_argument(
-        "--duplicates",
-        "-d",
-        type=_csv,
-        required=True,
-        metavar="N[,N2]",
-        help="Duplicate number(s) to append (comma‑separated)",
-    )
-    dup.add_argument("--suffix", default="_dup", help="Suffix after duplicate number")
+    dup.add_argument("-f", "--filter", action="append", required=True, metavar="entity=value[,value2]", help="Repeatable BIDS entity filter (e.g. -f subject=01 -f session=01 -f run=1,3 -f task=rest)")
     dup.add_argument("--commit-msg", "-c", help="If given, DataLad will save the new files")
-    dup.add_argument("--dry-run", action="store_true", help="Show what would change")
+    dup.add_argument("--dry-run", action="store_true", help="Show what would change but do not change anything")
     dup.add_argument("--no-datalad", action="store_true", help="Skip DataLad save step")
     dup.add_argument("-v", "--verbose", action="count", default=0, help="Increase log level")
     dup.set_defaults(func=_cmd_create_duplicates)
@@ -97,12 +81,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="Activate/deactivate one duplicate scan (rename in place)",
     )
     sw.add_argument("dataset", type=Path, help="Root of the BIDS dataset")
-    sw.add_argument("--subject", required=True)
-    sw.add_argument("--session")
-    sw.add_argument("--acquisition")
-    sw.add_argument("--run")
-    sw.add_argument("--label")
-    sw.add_argument("--duplicate", "-d", required=True)
+    sw.add_argument("-f", "--filter", action="append", required=True, metavar="entity=value[,value2]", help="Repeatable BIDS entity filter (e.g. -f subject=01 -f session=01 -f run=1,3 -f task=rest)")
+    sw.add_argument("--commit-msg", "-c", help="If given, DataLad will save the new files")
+    sw.add_argument("--dry-run", action="store_true", help="Show what would change but do not change anything")
     sw.add_argument("--no-datalad", action="store_true")
     sw.add_argument("-v", "--verbose", action="count", default=0)
     sw.set_defaults(func=_cmd_switch_duplicate)
@@ -112,29 +93,13 @@ def build_parser() -> argparse.ArgumentParser:
         "clean-duplicates",
         help="Remove obsolete duplicate scans",
     )
-    cl.add_argument("dataset",
-                    type=Path,
-                    help="Root of the BIDS dataset")
-    cl.add_argument("-f", "--filter",
-                    action="append",
-                    default=[],
-                    metavar = "entity=value[,value2]",
-                    help="Repeatable BIDS entity filter (e.g. -f task=rest)")
-    cl.add_argument("--keep_pattern",
-                    type=_csv,
-                    required=True,
-                    metavar="N[,N2]",
-                    help="Pattern(s) to keep (comma‑separated; e.g., '__dup-01')")
-    cl.add_argument("--commit-msg", "-c",
-                     help="If given, DataLad will save the new files")
-    cl.add_argument("--dry-run",
-                     action="store_true",
-                     help="Show what would change")
-    cl.add_argument("--no-datalad",
-                    action="store_true")
-    cl.add_argument("-v", "--verbose",
-                    action="count",
-                    default=0)
+    cl.add_argument("dataset", type=Path, help="Root of the BIDS dataset")
+    cl.add_argument("-f", "--filter", action="append", default=[], metavar = "entity=value[,value2]", help="Repeatable BIDS entity filter (e.g. -f task=rest)")
+    cl.add_argument("--keep_pattern", type=_csv, required=True, metavar="N[,N2]", help="Pattern(s) to keep (comma‑separated; e.g., '__dup-01')")
+    cl.add_argument("--commit-msg", "-c", help="If given, DataLad will save the new files")
+    cl.add_argument("--dry-run", action="store_true", help="Show what would change")
+    cl.add_argument("--no-datalad", action="store_true")
+    cl.add_argument("-v", "--verbose", action="count", default=0)
     cl.set_defaults(func=_cmd_clean_duplicates)
 
     return p
@@ -158,12 +123,9 @@ def _cmd_switch_duplicate(args: argparse.Namespace) -> None:
     _install_logging(args.verbose)
     switch_duplicate(
         dataset=args.dataset,
-        subject=args.subject,
-        session=args.session,
-        acquisition=args.acquisition,
-        run=args.run,
-        label=args.label,
-        duplicate=args.duplicate,
+        filters=args.filter,
+        commit_msg=args.commit_msg,
+        dry_run=args.dry_run,
         use_datalad=not args.no_datalad,
     )
 
