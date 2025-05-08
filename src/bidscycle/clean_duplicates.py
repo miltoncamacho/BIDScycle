@@ -43,11 +43,13 @@ except ModuleNotFoundError:
 lgr = logging.getLogger(__name__)
 __all__ = ["clean_duplicates"]
 
+
 # --------------------------------------------------------------------------- #
 # helpers                                                                     #
 # --------------------------------------------------------------------------- #
 
-## Parse filter strings into a dictionary
+
+# Parse filter strings into a dictionary
 def _parse_entities(items: List[str]) -> Dict[str, List[str]]:
     out: Dict[str, List[str]] = {}
     for kv in items:
@@ -55,15 +57,18 @@ def _parse_entities(items: List[str]) -> Dict[str, List[str]]:
         out[k] = [x.strip() for x in v.split(",") if x.strip()]
     return out
 
+
 # Get the full extension of a file (e.g., nii.gz)
 def _full_ext(p: Path) -> str:
     """Return the complete extension chain ('.nii.gz', '.tar.bz2', …)."""
     return "".join(p.suffixes)
 
+
 # Check if the file is a NIfTI file (i.e., .nii or .nii.gz)
 def _is_nifti(p: Path) -> bool:
     """True for .nii or .nii.gz (compressed)."""
     return _full_ext(p).startswith(".nii")
+
 
 # Get the sidecar JSON file for a NIfTI file
 def _json_sidecar(src: Path) -> Path:
@@ -79,6 +84,7 @@ def _json_sidecar(src: Path) -> Path:
 # main worker                                                                 #
 # --------------------------------------------------------------------------- #
 
+
 # Remove duplicate files from a BIDS dataset
 def clean_duplicates(
     *,
@@ -91,7 +97,7 @@ def clean_duplicates(
 ) -> List[Path]:
     """
     Remove duplicate files with __dup-XX pattern, keeping one specified pattern if provided.
-    
+
     Parameters
     ----------
     dataset
@@ -114,54 +120,56 @@ def clean_duplicates(
         Paths of all removed files.
     """
 
-    layout = BIDSLayout(dataset, validate=True)
-    
+    layout = BIDSLayout(dataset, validate=False)
+
     # First, identify all files with __dup-XX pattern
     dup_pattern = re.compile(r"__dup-\d\d")
-    
+
     # Start with all matching files from the filters
     base_files = layout.get(**_parse_entities(filters), return_type="filename")
-    
+
+    # ------------------ build rename plan ---------------------------------- #
     # Find all files with the dup pattern that match our base criteria
     all_files = []
     for base_file in base_files:
         base_path = Path(base_file)
         parent_dir = base_path.parent
-        
+
         # Extract the stem before any extension
         stem = base_path.name.split('.')[0]
         base_stem = re.split(r"__dup-\d\d", stem)[0] if dup_pattern.search(stem) else stem
-        
+
         # Find all files that match this base stem plus any dup pattern
         for f in parent_dir.glob(f"{base_stem}*"):
             if dup_pattern.search(f.name):
                 all_files.append(f)
-    
+
     # Filter files to keep or remove
     files_to_remove = []
     for file_path in all_files:
         match = dup_pattern.search(file_path.name)
+        # lgr.info("match: %s", match)
         if match:
             current_pattern = match.group(0)
             if keep_pattern is None or current_pattern != keep_pattern:
                 files_to_remove.append(file_path)
-                
+
                 # Also add JSON sidecar if this is a NIfTI file
                 if _is_nifti(file_path):
                     json_path = _json_sidecar(file_path)
-                    if json_path.exists():
+                    if json_path.exists() and json_path not in files_to_remove:
                         files_to_remove.append(json_path)
-    
+
     if not files_to_remove:
         lgr.warning("No duplicate files found matching the filters %s", filters)
         return []
-        
+
     lgr.info("Found %d file(s) to remove with filters %s", len(files_to_remove), filters)
-    
+
     # Track scans.tsv updates needed
     tsv_updates = defaultdict(dict)
-    
-    # Execute removals
+
+    # ------------------ execute renames ------------------------------------ #
     removed_files = []
     for file_path in files_to_remove:
         if _is_nifti(file_path):
@@ -169,47 +177,49 @@ def clean_duplicates(
             session_dir = file_path.parents[1]  # .../sub-XX/ses-YY
             rel_path = file_path.relative_to(session_dir).as_posix()
             tsv_path = next(session_dir.glob("*_scans.tsv"), None)
-            
+
             if tsv_path:
                 # Mark this file for removal from the TSV
                 tsv_updates[tsv_path][rel_path] = None
-        
+
         rel_path = file_path.relative_to(dataset)
         if dry_run:
             lgr.info("[DRY-RUN] Would remove %s", rel_path)
+            removed_files.append(file_path)
         else:
             if file_path.exists():
                 file_path.unlink()
                 removed_files.append(file_path)
                 lgr.debug("Removed %s", rel_path)
-    
-    # Update scans.tsv files
+
+    # ------------------ patch scans.tsv ------------------------------------ #
     for tsv_path, removals in tsv_updates.items():
         if dry_run:
             for path in removals:
-                lgr.info("[DRY-RUN] Would remove entry %s from %s", 
+                lgr.info("[DRY-RUN] Would remove entry %s from %s",
                          path, tsv_path.relative_to(dataset))
             continue
-            
+
         lgr.debug("Updating %s", tsv_path.relative_to(dataset))
+
         with tsv_path.open(newline="") as fin, tempfile.NamedTemporaryFile(
             "w", delete=False, newline="", dir=str(tsv_path.parent)
         ) as fout:
             rdr = csv.reader(fin, delimiter="\t")
             wtr = csv.writer(fout, delimiter="\t", lineterminator="\n")
-            
+
             header = next(rdr)
             filename_idx = header.index("filename")
             wtr.writerow(header)
-            
+
             for row in rdr:
                 # Skip rows for files we've removed
                 if row[filename_idx] not in removals:
                     wtr.writerow(row)
-                    
+
         shutil.move(fout.name, tsv_path)
-    
-    # Commit changes if requested
+
+    # ------------------ provenance ----------------------------------------- #
     if (
         commit_msg
         and not dry_run
@@ -219,6 +229,13 @@ def clean_duplicates(
     ):
         lgr.info("Saving changes to DataLad with message: %s", commit_msg)
         dl.Dataset(str(dataset)).save(message=commit_msg)
-    
-    lgr.info("Finished: %d file(s) removed", len(removed_files))
+
+    # ------------------ summary -------------------------------------------- #
+    if dry_run:
+        lgr.info("Would remove %d file(s)", len(removed_files))
+        lgr.info("Would patch %d scans.tsv files", len(tsv_updates))
+    else:
+        lgr.info("Removed %d file(s) (plus side‑cars)", len(removed_files))
+        lgr.info("Patched %d scans.tsv files", len(tsv_updates))
+
     return removed_files

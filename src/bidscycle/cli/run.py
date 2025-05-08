@@ -62,6 +62,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
+
     # --------------------------- create‑duplicates -------------------------- #
     dup = sub.add_parser(
         "create-duplicates",
@@ -74,6 +75,7 @@ def build_parser() -> argparse.ArgumentParser:
     dup.add_argument("--no-datalad", action="store_true", help="Skip DataLad save step")
     dup.add_argument("-v", "--verbose", action="count", default=0, help="Increase log level")
     dup.set_defaults(func=_cmd_create_duplicates)
+
 
     # --------------------------- switch‑duplicate --------------------------- #
     sw = sub.add_parser(
@@ -94,8 +96,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Remove obsolete duplicate scans",
     )
     cl.add_argument("dataset", type=Path, help="Root of the BIDS dataset")
-    cl.add_argument("-f", "--filter", action="append", default=[], metavar = "entity=value[,value2]", help="Repeatable BIDS entity filter (e.g. -f task=rest)")
-    cl.add_argument("--keep_pattern", type=_csv, required=True, metavar="N[,N2]", help="Pattern(s) to keep (comma‑separated; e.g., '__dup-01')")
+    cl.add_argument("-f", "--filter", action="append", required=True, metavar = "entity=value[,value2]", help="Repeatable BIDS entity filter (e.g. -f task=rest)")
+    cl.add_argument("--keep_pattern", type=_csv, metavar="N[,N2]", help="Pattern(s) to keep (comma‑separated; e.g., '__dup-01')")
     cl.add_argument("--commit-msg", "-c", help="If given, DataLad will save the new files")
     cl.add_argument("--dry-run", action="store_true", help="Show what would change")
     cl.add_argument("--no-datalad", action="store_true")
@@ -134,12 +136,13 @@ def _cmd_clean_duplicates(args: argparse.Namespace) -> None:
     _install_logging(args.verbose)
     clean_duplicates(
         dataset=args.dataset,
-        subject=args.subject,
-        session=args.session,
-        label=args.label,
-        duplicate=args.duplicate,
+        filters=args.filter,
+        keep_pattern=args.keep_pattern,
+        commit_msg=args.commit_msg,
+        dry_run=args.dry_run,
         use_datalad=not args.no_datalad,
     )
+
 
 # --------------------------------------------------------------------------- #
 # entry point                                                                 #
