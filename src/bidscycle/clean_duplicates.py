@@ -151,7 +151,7 @@ def clean_duplicates(
         # lgr.info("match: %s", match)
         if match:
             current_pattern = match.group(0)
-            if keep_pattern is None or current_pattern != keep_pattern:
+            if keep_pattern is None or current_pattern not in keep_pattern:
                 files_to_remove.append(file_path)
 
                 # Also add JSON sidecar if this is a NIfTI file
@@ -161,7 +161,7 @@ def clean_duplicates(
                         files_to_remove.append(json_path)
 
     if not files_to_remove:
-        lgr.warning("No duplicate files found matching the filters %s", filters)
+        lgr.warning("No duplicate files found matching the filters %s and keep_pattern %s", filters, keep_pattern)
         return []
 
     lgr.info("Found %d file(s) to remove with filters %s", len(files_to_remove), filters)
