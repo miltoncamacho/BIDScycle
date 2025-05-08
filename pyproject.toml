@@ -5,7 +5,8 @@ build-backend = "flit_core.buildapi"
 [project]
 name =  "BIDScycle"
 authors = [
-    {name = "Milton Camacho", email = "miltoncamachoicc@gmail.com"},{name = "Shireen Parimoo", email = "sparimoo95@gmail.com"},
+    {name = "Milton Camacho", email = "miltoncamachoicc@gmail.com"},
+    {name = "Shireen Parimoo", email = "sparimoo95@gmail.com"},
 ]
 description = "Easy BIDS compliant renaming of BIDS duplicates"
 readme = "README.md"
@@ -23,9 +24,10 @@ requires-python = ">=3.11.1"
 dynamic = ["version"]
 
 dependencies = [
-    "bids",
+    "pybids",
     "coloredlogs",
-    "pandas"
+    "pandas",
+    "datalad",
 ]
 
 [project.optional-dependencies]
@@ -33,23 +35,23 @@ spark = [
     "pyspark>=3.0.0"
 ]
 test = [
-    "bandit[toml]==1.7.5",
-    "black==23.3.0",
-    "check-manifest==0.49",
-    "flake8-bugbear==23.5.9",
+    "bandit[toml]==1.8.3",
+    "black==25.1.0",
+    "check-manifest==0.50",
+    "flake8-bugbear==24.12.12",
     "flake8-docstrings",
     "flake8-formatter_junit_xml",
     "flake8",
     "flake8-pyproject",
-    "pre-commit==3.3.1",
-    "pylint==2.17.4",
+    "pre-commit==4.2.0",
+    "pylint==3.3.7",
     "pylint_junit",
-    "pytest-cov==4.0.0",
-    "pytest-mock<3.10.1",
+    "pytest-cov==6.1.1",
+    "pytest-mock<3.14.1",
     "pytest-runner",
-    "pytest==7.3.1",
+    "pytest==8.3.5",
     "pytest-github-actions-annotate-failures",
-    "shellcheck-py==0.9.0.2"
+    "shellcheck-py==0.10.0.1"
 ]
 
 [project.scripts]
@@ -61,7 +63,7 @@ Source = "https://github.com/miltoncamacho/bidscycle"
 Tracker = "https://github.com/miltoncamacho/bidscycle/issues"
 
 [tool.flit.module]
-name = "python_package"
+name = "bidscycle"
 
 [tool.bandit]
 exclude_dirs = ["build","dist","tests","scripts"]
