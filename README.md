@@ -55,7 +55,7 @@ usage: bidscycle switch-duplicates [-h] -f entity=value[,value2] [--commit-msg C
 | `--no-datalad`    | Skip Datalad commands during execution.                                    |
 | `-v`              | Enable verbose output for debugging purposes.                              |
 
-### switch-duplicates
+### clean-duplicates
 
 ```bash
 usage: bidscycle clean-duplicates [-h] [-f entity=value[,value2]] --keep_pattern N[,N2] [--commit-msg COMMIT_MSG] [--dry-run] [--no-datalad] [-v] dataset
